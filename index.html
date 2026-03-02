@@ -11,7 +11,7 @@
 :root {
   --bg: #f5f5f5; --surface: #fff; --text: #1a1a1a; --text2: #666;
   --primary: #4285f4; --primary-dark: #3367d6; --border: #e0e0e0;
-  --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --danger: #d93025; --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -26,21 +26,21 @@ body {
   position: sticky; top: 0; z-index: 100;
 }
 .header h1 { font-size: 18px; flex: 1; }
-.header button {
+.header-btn {
   background: none; border: none; font-size: 20px; cursor: pointer;
   width: 36px; height: 36px; border-radius: 50%; display: flex;
   align-items: center; justify-content: center;
 }
-.header button:active { background: var(--bg); }
+.header-btn:active { background: var(--bg); }
 
-/* Setup / Auth */
+/* Cards & forms */
 .card {
   background: var(--surface); margin: 16px; border-radius: var(--radius);
   padding: 20px; box-shadow: var(--shadow);
 }
 .card h2 { font-size: 16px; margin-bottom: 12px; }
 .card p { font-size: 14px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
-.input-group { margin-bottom: 12px; }
+.input-group { margin-bottom: 14px; }
 .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .input-group input {
   width: 100%; padding: 10px 12px; border: 1px solid var(--border);
@@ -53,27 +53,54 @@ body {
   font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s;
 }
 .btn:active { opacity: 0.7; }
+.btn:disabled { opacity: 0.4; cursor: default; }
 .btn-primary { background: var(--primary); color: #fff; }
+.btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
 .btn-google { background: #fff; color: #333; border: 1px solid var(--border); }
 .btn-google img { width: 20px; height: 20px; }
-.btn-sm { width: auto; padding: 8px 16px; font-size: 13px; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
 
-/* Folder input */
+/* PIN screen */
+.pin-screen {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 80dvh; padding: 20px;
+}
+.pin-screen h2 { font-size: 20px; margin-bottom: 8px; }
+.pin-screen p { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
+.pin-dots {
+  display: flex; gap: 12px; margin-bottom: 24px;
+}
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); transition: all 0.15s;
+}
+.pin-dot.filled { background: var(--primary); border-color: var(--primary); }
+.pin-dot.error { border-color: var(--danger); background: var(--danger); }
+.pin-pad {
+  display: grid; grid-template-columns: repeat(3, 72px); gap: 12px;
+}
+.pin-key {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 24px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+}
+.pin-key:active { background: var(--bg); }
+.pin-key.fn { font-size: 14px; border: none; background: none; }
+
+/* Folder bar */
 .folder-bar {
   background: var(--surface); padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  display: flex; gap: 8px;
+  display: flex; gap: 8px; align-items: center;
 }
-.folder-bar input {
-  flex: 1; padding: 10px 12px; border: 1px solid var(--border);
-  border-radius: 8px; font-size: 14px; outline: none;
+.folder-label {
+  flex: 1; font-size: 13px; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.folder-bar input:focus { border-color: var(--primary); }
-.folder-bar button {
-  padding: 10px 16px; background: var(--primary); color: #fff;
-  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
-  cursor: pointer; white-space: nowrap;
-}
+.folder-label strong { color: var(--text); font-size: 14px; }
 
 /* ZIP list */
 .zip-list { padding: 8px 16px 120px; }
@@ -91,17 +118,14 @@ body {
 .zip-name { font-size: 15px; font-weight: 600; word-break: break-all; }
 .zip-size { font-size: 12px; color: var(--text2); margin-top: 2px; }
 .zip-arrow {
-  font-size: 12px; color: var(--text2); transition: transform 0.2s;
-  flex-shrink: 0;
+  font-size: 12px; color: var(--text2); transition: transform 0.2s; flex-shrink: 0;
 }
 .zip-item.open .zip-arrow { transform: rotate(90deg); }
 .zip-body { display: none; border-top: 1px solid var(--border); }
 .zip-item.open .zip-body { display: block; }
 
-/* Loading */
-.zip-loading {
-  padding: 20px; text-align: center; color: var(--text2); font-size: 14px;
-}
+/* Loading / spinner */
+.zip-loading { padding: 20px; text-align: center; color: var(--text2); font-size: 14px; }
 .spinner {
   display: inline-block; width: 20px; height: 20px;
   border: 2px solid var(--border); border-top-color: var(--primary);
@@ -109,9 +133,13 @@ body {
   vertical-align: middle; margin-right: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.page-loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 20px; color: var(--text2);
+}
+.page-loading .spinner { margin: 0 0 12px 0; width: 28px; height: 28px; }
 
-/* File tree */
-.tree { padding: 8px 0; }
+/* Tree */
 .tree-folder {
   cursor: pointer; user-select: none;
   padding: 8px 16px; display: flex; align-items: center; gap: 8px;
@@ -131,14 +159,12 @@ body {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
   padding: 4px 16px 8px;
 }
-.image-grid.nested { padding-left: 32px; }
 .image-cell {
   aspect-ratio: 1; overflow: hidden; border-radius: 6px;
   cursor: pointer; background: var(--bg); position: relative;
 }
 .image-cell img {
-  width: 100%; height: 100%; object-fit: cover;
-  display: block; transition: opacity 0.3s;
+  width: 100%; height: 100%; object-fit: cover; display: block;
 }
 .image-cell .img-name {
   position: absolute; bottom: 0; left: 0; right: 0;
@@ -159,8 +185,7 @@ body {
 }
 .lightbox.active { opacity: 1; pointer-events: auto; }
 .lightbox-header {
-  display: flex; align-items: center; padding: 12px 16px;
-  color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; padding: 12px 16px; color: #fff; flex-shrink: 0;
 }
 .lightbox-title { flex: 1; font-size: 14px; text-align: center; word-break: break-all; }
 .lightbox-close {
@@ -174,8 +199,7 @@ body {
 }
 .lightbox-body img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .lightbox-nav {
-  display: flex; justify-content: center; gap: 24px;
-  padding: 12px; flex-shrink: 0;
+  display: flex; justify-content: center; gap: 24px; padding: 12px; flex-shrink: 0;
 }
 .lightbox-nav button {
   background: rgba(255,255,255,0.15); border: none; color: #fff;
@@ -184,8 +208,7 @@ body {
 }
 .lightbox-nav button:active { background: rgba(255,255,255,0.3); }
 .lightbox-counter {
-  color: rgba(255,255,255,0.6); font-size: 13px;
-  display: flex; align-items: center;
+  color: rgba(255,255,255,0.6); font-size: 13px; display: flex; align-items: center;
 }
 
 /* Settings modal */
@@ -201,12 +224,14 @@ body {
 }
 .modal h2 { font-size: 18px; margin-bottom: 16px; }
 .modal .input-group { margin-bottom: 16px; }
+.modal-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
 
 /* Status */
-.status-msg {
-  text-align: center; padding: 40px 20px; color: var(--text2); font-size: 14px;
-}
-.error { color: #d93025; }
+.status-msg { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 14px; }
+.error { color: var(--danger); }
 
 /* User info */
 .user-chip {
@@ -216,20 +241,22 @@ body {
 }
 .user-chip img { width: 28px; height: 28px; border-radius: 50%; }
 
-/* Page-level loading */
-.page-loading {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 60px 20px; color: var(--text2);
+/* Shake animation for wrong PIN */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
 }
-.page-loading .spinner { margin: 0 0 12px 0; width: 28px; height: 28px; }
+.shake { animation: shake 0.4s ease; }
 </style>
 </head>
 <body>
 
-<div class="header">
+<div class="header" id="header" style="display:none">
   <h1>ZIP Viewer</h1>
   <div id="userArea"></div>
-  <button id="settingsBtn" title="設定">&#9881;</button>
+  <button class="header-btn" id="lockBtn" title="ロック">&#128274;</button>
+  <button class="header-btn" id="settingsBtn" title="設定">&#9881;</button>
 </div>
 
 <div id="app"></div>
@@ -253,45 +280,138 @@ body {
     <h2>設定</h2>
     <div class="input-group">
       <label>Google Client ID</label>
-      <input type="text" id="clientIdInput" placeholder="xxxx.apps.googleusercontent.com">
+      <input type="text" id="modalClientId" placeholder="xxxx.apps.googleusercontent.com">
     </div>
-    <p>Google Cloud Console で OAuth 2.0 クライアントIDを作成し、<br>承認済み JavaScript 生成元にこのサイトのURLを追加してください。</p>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" id="saveSettings" style="flex:1">保存</button>
-      <button class="btn btn-google" id="cancelSettings" style="flex:1">キャンセル</button>
+    <div class="input-group">
+      <label>Google ドライブ フォルダURL</label>
+      <input type="url" id="modalFolderUrl" placeholder="https://drive.google.com/drive/folders/...">
     </div>
-    <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
-      <button class="btn btn-google" id="signOutBtn" style="color:#d93025">サインアウト</button>
+    <hr class="modal-divider">
+    <div class="input-group">
+      <label>PIN変更（変更する場合のみ入力）</label>
+      <input type="password" id="modalNewPin" placeholder="新しい4桁以上のPIN" inputmode="numeric">
     </div>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button class="btn btn-primary" id="modalSave">保存</button>
+      <button class="btn btn-outline" id="modalCancel">キャンセル</button>
+    </div>
+    <hr class="modal-divider">
+    <button class="btn btn-outline" id="modalSignOut">サインアウト（再認証）</button>
+    <button class="btn btn-danger" id="modalReset" style="margin-top:8px">全データ削除</button>
   </div>
 </div>
 
 <script>
+// ─────────────────────────────
+// Constants
+// ─────────────────────────────
 const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|svg|bmp|avif|ico|heic|heif|tiff?)$/i;
 const ZIP_MIME = 'application/zip';
 const ZIP_EXTS = /\.(zip)$/i;
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+const VAULT_KEY = 'dzv_vault';
+const PBKDF2_ITERATIONS = 200000;
 
+// ─────────────────────────────
+// State
+// ─────────────────────────────
 let state = {
-  clientId: localStorage.getItem('g_client_id') || '',
+  // Decrypted config (in memory only)
+  config: null, // { clientId, folderUrl }
+  pin: null,    // kept in memory for re-encryption on settings change
+
+  // Runtime
   accessToken: null,
   user: null,
-  folderId: null,
-  folderUrl: localStorage.getItem('last_folder_url') || '',
   zipFiles: [],
-  extractedZips: {},  // fileId -> {tree, images[]}
+  extractedZips: {},
   tokenClient: null,
 };
 
-// ── Lightbox ──
+// ─────────────────────────────
+// Crypto (AES-256-GCM + PBKDF2)
+// ─────────────────────────────
+function buf2b64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function b642buf(b64) {
+  const s = atob(b64);
+  const buf = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) buf[i] = s.charCodeAt(i);
+  return buf;
+}
+
+async function deriveKey(pin, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptConfig(config, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pin, salt);
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(JSON.stringify(config))
+  );
+  return JSON.stringify({
+    s: buf2b64(salt),
+    i: buf2b64(iv),
+    d: buf2b64(ciphertext),
+  });
+}
+
+async function decryptConfig(vaultStr, pin) {
+  const vault = JSON.parse(vaultStr);
+  const salt = b642buf(vault.s);
+  const iv = b642buf(vault.i);
+  const data = b642buf(vault.d);
+  const key = await deriveKey(pin, salt);
+  const plainBuf = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data
+  );
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+function hasVault() {
+  return !!localStorage.getItem(VAULT_KEY);
+}
+
+async function saveVault(config, pin) {
+  const encrypted = await encryptConfig(config, pin);
+  localStorage.setItem(VAULT_KEY, encrypted);
+}
+
+async function loadVault(pin) {
+  const raw = localStorage.getItem(VAULT_KEY);
+  if (!raw) throw new Error('no vault');
+  return await decryptConfig(raw, pin);
+}
+
+// ─────────────────────────────
+// Lightbox
+// ─────────────────────────────
 let lightboxImages = [];
 let lightboxIndex = 0;
 
 function openLightbox(images, index) {
   lightboxImages = images;
   lightboxIndex = index;
-  renderLightbox();
+  renderLightboxContent();
   document.getElementById('lightbox').classList.add('active');
 }
 function closeLightbox() {
@@ -299,7 +419,7 @@ function closeLightbox() {
   const img = document.querySelector('#lightboxBody img');
   if (img) img.src = '';
 }
-function renderLightbox() {
+function renderLightboxContent() {
   const item = lightboxImages[lightboxIndex];
   document.getElementById('lightboxTitle').textContent = item.name;
   document.getElementById('lightboxBody').innerHTML = '';
@@ -309,6 +429,7 @@ function renderLightbox() {
   document.getElementById('lightboxCounter').textContent =
     `${lightboxIndex + 1} / ${lightboxImages.length}`;
 }
+
 document.getElementById('lightboxClose').onclick = closeLightbox;
 document.getElementById('lightbox').onclick = (e) => {
   if (e.target === e.currentTarget || e.target === document.getElementById('lightboxBody'))
@@ -316,11 +437,11 @@ document.getElementById('lightbox').onclick = (e) => {
 };
 document.getElementById('lightboxPrev').onclick = () => {
   lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
-  renderLightbox();
+  renderLightboxContent();
 };
 document.getElementById('lightboxNext').onclick = () => {
   lightboxIndex = (lightboxIndex + 1) % lightboxImages.length;
-  renderLightbox();
+  renderLightboxContent();
 };
 document.addEventListener('keydown', (e) => {
   if (!document.getElementById('lightbox').classList.contains('active')) return;
@@ -329,7 +450,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
 });
 
-// ── Swipe support ──
 let touchStartX = 0;
 document.getElementById('lightbox').addEventListener('touchstart', (e) => {
   touchStartX = e.changedTouches[0].screenX;
@@ -342,46 +462,94 @@ document.getElementById('lightbox').addEventListener('touchend', (e) => {
   }
 });
 
-// ── Settings ──
+// ─────────────────────────────
+// Settings Modal
+// ─────────────────────────────
 document.getElementById('settingsBtn').onclick = () => {
-  document.getElementById('clientIdInput').value = state.clientId;
+  if (!state.config) return;
+  document.getElementById('modalClientId').value = state.config.clientId || '';
+  document.getElementById('modalFolderUrl').value = state.config.folderUrl || '';
+  document.getElementById('modalNewPin').value = '';
   document.getElementById('settingsModal').classList.add('active');
 };
-document.getElementById('cancelSettings').onclick = () => {
+document.getElementById('modalCancel').onclick = () => {
   document.getElementById('settingsModal').classList.remove('active');
 };
 document.getElementById('settingsModal').onclick = (e) => {
   if (e.target === e.currentTarget)
     document.getElementById('settingsModal').classList.remove('active');
 };
-document.getElementById('saveSettings').onclick = () => {
-  const val = document.getElementById('clientIdInput').value.trim();
-  if (val) {
-    state.clientId = val;
-    localStorage.setItem('g_client_id', val);
-    document.getElementById('settingsModal').classList.remove('active');
-    initAuth();
+
+document.getElementById('modalSave').onclick = async () => {
+  const clientId = document.getElementById('modalClientId').value.trim();
+  const folderUrl = document.getElementById('modalFolderUrl').value.trim();
+  const newPin = document.getElementById('modalNewPin').value;
+
+  if (!clientId) { alert('Client IDは必須です'); return; }
+
+  const pin = newPin.length >= 4 ? newPin : state.pin;
+  if (newPin && newPin.length < 4) { alert('PINは4桁以上にしてください'); return; }
+
+  state.config = { clientId, folderUrl };
+  state.pin = pin;
+  await saveVault(state.config, pin);
+
+  document.getElementById('settingsModal').classList.remove('active');
+
+  // Re-init auth if client ID changed
+  initAuth();
+  if (state.accessToken && folderUrl) {
+    handleAutoLoad();
+  } else {
     render();
   }
 };
-document.getElementById('signOutBtn').onclick = () => {
+
+document.getElementById('modalSignOut').onclick = () => {
+  if (state.accessToken) {
+    google.accounts.oauth2.revoke(state.accessToken);
+  }
   state.accessToken = null;
   state.user = null;
   state.zipFiles = [];
   state.extractedZips = {};
-  if (state.accessToken) {
-    google.accounts.oauth2.revoke(state.accessToken);
-  }
   document.getElementById('settingsModal').classList.remove('active');
   render();
 };
 
-// ── Google Auth ──
+document.getElementById('modalReset').onclick = () => {
+  if (!confirm('全ての設定とデータを削除しますか？')) return;
+  localStorage.removeItem(VAULT_KEY);
+  state = {
+    config: null, pin: null, accessToken: null, user: null,
+    zipFiles: [], extractedZips: {}, tokenClient: null,
+  };
+  document.getElementById('settingsModal').classList.remove('active');
+  document.getElementById('header').style.display = 'none';
+  render();
+};
+
+// Lock button
+document.getElementById('lockBtn').onclick = () => {
+  state.config = null;
+  state.pin = null;
+  state.accessToken = null;
+  state.user = null;
+  state.zipFiles = [];
+  state.extractedZips = {};
+  state.tokenClient = null;
+  document.getElementById('header').style.display = 'none';
+  render();
+};
+
+// ─────────────────────────────
+// Google Auth
+// ─────────────────────────────
 function initAuth() {
-  if (!state.clientId) return;
+  if (!state.config?.clientId) return;
   try {
     state.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: state.clientId,
+      client_id: state.config.clientId,
       scope: SCOPES,
       callback: handleTokenResponse,
     });
@@ -396,12 +564,15 @@ function handleTokenResponse(resp) {
     return;
   }
   state.accessToken = resp.access_token;
-  fetchUserInfo().then(() => render());
+  fetchUserInfo().then(() => {
+    render();
+    if (state.config?.folderUrl) handleAutoLoad();
+  });
 }
 
 function requestSignIn() {
   if (!state.tokenClient) {
-    alert('Client IDが設定されていません。設定画面からClient IDを入力してください。');
+    alert('設定にClient IDがありません');
     return;
   }
   state.tokenClient.requestAccessToken();
@@ -432,7 +603,9 @@ async function driveApiFetch(url) {
   return res;
 }
 
-// ── Drive API ──
+// ─────────────────────────────
+// Drive API
+// ─────────────────────────────
 function parseFolderUrl(url) {
   const m = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
   return m ? m[1] : null;
@@ -441,10 +614,7 @@ function parseFolderUrl(url) {
 async function loadFolder(url) {
   const folderId = parseFolderUrl(url);
   if (!folderId) throw new Error('無効なGoogle ドライブフォルダURLです');
-  state.folderId = folderId;
-  state.folderUrl = url;
   state.extractedZips = {};
-  localStorage.setItem('last_folder_url', url);
 
   let allFiles = [];
   let pageToken = '';
@@ -459,9 +629,9 @@ async function loadFolder(url) {
     pageToken = data.nextPageToken || '';
   } while (pageToken);
 
-  state.zipFiles = allFiles.filter(f =>
-    f.mimeType === ZIP_MIME || ZIP_EXTS.test(f.name)
-  );
+  state.zipFiles = allFiles
+    .filter(f => f.mimeType === ZIP_MIME || ZIP_EXTS.test(f.name))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja', { numeric: true }));
 }
 
 async function downloadAndExtractZip(fileId) {
@@ -483,8 +653,7 @@ async function downloadAndExtractZip(fileId) {
       node = node[parts[i]];
     }
     const fileName = parts[parts.length - 1];
-    if (fileName.startsWith('.') || fileName.startsWith('__MACOSX')) continue;
-    if (path.includes('__MACOSX')) continue;
+    if (fileName.startsWith('.') || path.includes('__MACOSX')) continue;
 
     if (IMAGE_EXTS.test(fileName)) {
       const blob = await entry.async('blob');
@@ -496,53 +665,84 @@ async function downloadAndExtractZip(fileId) {
       node[fileName] = { type: 'file' };
     }
   }
-
   state.extractedZips[fileId] = { tree, images };
 }
 
-// ── Rendering ──
+// ─────────────────────────────
+// Auto-load saved folder
+// ─────────────────────────────
+async function handleAutoLoad() {
+  if (!state.config?.folderUrl || !state.accessToken) return;
+  const zipList = document.getElementById('zipList');
+  if (!zipList) return;
+  zipList.innerHTML = '<div class="page-loading"><span class="spinner"></span>フォルダを読み込み中...</div>';
+  try {
+    await loadFolder(state.config.folderUrl);
+    renderZipList();
+  } catch (e) {
+    zipList.innerHTML = `<div class="status-msg error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ─────────────────────────────
+// Rendering
+// ─────────────────────────────
 function render() {
   const app = document.getElementById('app');
-  renderUserArea();
 
-  // No client ID
-  if (!state.clientId) {
+  // ── No vault: first-time setup
+  if (!hasVault()) {
+    document.getElementById('header').style.display = 'none';
     app.innerHTML = `
       <div class="card">
-        <h2>セットアップ</h2>
-        <p>Google Drive APIを使用するためにClient IDが必要です。</p>
-        <ol style="font-size:14px;color:var(--text2);padding-left:20px;margin-bottom:16px;line-height:2">
-          <li><a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> でプロジェクトを作成</li>
-          <li>「APIとサービス」→「ライブラリ」→ Google Drive API を有効化</li>
-          <li>「認証情報」→「OAuth 2.0 クライアントID」を作成（ウェブアプリ）</li>
-          <li>承認済み JavaScript 生成元にこのサイトのURL を追加</li>
-          <li>OAuth 同意画面でテストユーザーに自分を追加</li>
-        </ol>
+        <h2>初期設定</h2>
+        <p>設定はPINで暗号化してブラウザに保存されます。<br>次回以降はPIN入力だけで使えます。</p>
         <div class="input-group">
-          <label>Client ID</label>
+          <label>PIN（4桁以上の数字）</label>
+          <input type="password" id="setupPin" placeholder="PIN" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label>Google Client ID</label>
           <input type="text" id="setupClientId" placeholder="xxxx.apps.googleusercontent.com">
         </div>
-        <button class="btn btn-primary" id="setupSave">設定して開始</button>
+        <div class="input-group">
+          <label>Google ドライブ フォルダURL</label>
+          <input type="url" id="setupFolderUrl" placeholder="https://drive.google.com/drive/folders/...">
+        </div>
+        <details style="margin-bottom:16px">
+          <summary style="font-size:13px;color:var(--text2);cursor:pointer">Client IDの取得方法</summary>
+          <ol style="font-size:13px;color:var(--text2);padding:8px 0 0 20px;line-height:2">
+            <li><a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> でプロジェクト作成</li>
+            <li>「APIとサービス」→「ライブラリ」→ Google Drive API を有効化</li>
+            <li>「認証情報」→「OAuth 2.0 クライアントID」を作成（ウェブアプリ）</li>
+            <li>承認済み JavaScript 生成元にこのサイトのURLを追加</li>
+            <li>OAuth 同意画面でテストユーザーに自分を追加</li>
+          </ol>
+        </details>
+        <button class="btn btn-primary" id="setupSave">暗号化して保存</button>
       </div>`;
-    document.getElementById('setupSave').onclick = () => {
-      const v = document.getElementById('setupClientId').value.trim();
-      if (v) {
-        state.clientId = v;
-        localStorage.setItem('g_client_id', v);
-        initAuth();
-        render();
-      }
-    };
+    document.getElementById('setupSave').onclick = handleSetup;
     return;
   }
 
-  // Not signed in
+  // ── Vault exists but not unlocked: PIN screen
+  if (!state.config) {
+    document.getElementById('header').style.display = 'none';
+    renderPinScreen();
+    return;
+  }
+
+  // ── Unlocked
+  document.getElementById('header').style.display = 'flex';
+  renderUserArea();
+
+  // Not signed in to Google
   if (!state.accessToken) {
     app.innerHTML = `
       <div class="card" style="text-align:center;padding:40px 20px">
-        <div style="font-size:48px;margin-bottom:16px">&#128193;</div>
-        <h2 style="margin-bottom:8px">Drive ZIP Viewer</h2>
-        <p>Google ドライブのZIPファイルを<br>フォルダ構造で閲覧できます</p>
+        <div style="font-size:48px;margin-bottom:16px">&#128274; &#10132; &#128193;</div>
+        <h2 style="margin-bottom:8px">ロック解除済み</h2>
+        <p>Googleアカウントでサインインして<br>ドライブにアクセスします</p>
         <button class="btn btn-google" id="signInBtn">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
           Googleでサインイン
@@ -552,32 +752,111 @@ function render() {
     return;
   }
 
-  // Signed in - show folder input + zip list
+  // ── Signed in: show folder + zips
+  const folderName = state.config.folderUrl
+    ? parseFolderUrl(state.config.folderUrl) || '...'
+    : '未設定';
   app.innerHTML = `
     <div class="folder-bar">
-      <input type="text" id="folderInput" placeholder="Google ドライブのフォルダURL"
-             value="${escapeHtml(state.folderUrl)}">
-      <button id="loadBtn">読込</button>
+      <div class="folder-label">
+        &#128193; <strong>${escapeHtml(folderName.substring(0, 12))}...</strong>
+      </div>
     </div>
     <div id="zipList" class="zip-list">
-      ${state.zipFiles.length === 0
-        ? '<div class="status-msg">フォルダURLを入力して「読込」をタップ</div>'
-        : state.zipFiles.map(f => renderZipItem(f)).join('')
-      }
+      <div class="status-msg">読み込み中...</div>
     </div>`;
 
-  document.getElementById('loadBtn').onclick = handleLoad;
-  document.getElementById('folderInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleLoad();
-  });
+  if (state.zipFiles.length > 0) {
+    renderZipList();
+  } else if (state.config.folderUrl) {
+    handleAutoLoad();
+  } else {
+    document.getElementById('zipList').innerHTML =
+      '<div class="status-msg">設定画面からフォルダURLを設定してください</div>';
+  }
+}
 
-  // Bind zip item events
-  state.zipFiles.forEach(f => {
-    const el = document.getElementById(`zip-${f.id}`);
-    if (el) {
-      el.querySelector('.zip-header').onclick = () => toggleZip(f.id);
+function renderPinScreen() {
+  const app = document.getElementById('app');
+  let pinValue = '';
+
+  app.innerHTML = `
+    <div class="pin-screen">
+      <div style="font-size:48px;margin-bottom:16px">&#128274;</div>
+      <h2>PIN入力</h2>
+      <p>設定を復号するPINを入力してください</p>
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-pad" id="pinPad">
+        <button class="pin-key" data-val="1">1</button>
+        <button class="pin-key" data-val="2">2</button>
+        <button class="pin-key" data-val="3">3</button>
+        <button class="pin-key" data-val="4">4</button>
+        <button class="pin-key" data-val="5">5</button>
+        <button class="pin-key" data-val="6">6</button>
+        <button class="pin-key" data-val="7">7</button>
+        <button class="pin-key" data-val="8">8</button>
+        <button class="pin-key" data-val="9">9</button>
+        <button class="pin-key fn" data-val="reset" style="font-size:12px">リセット</button>
+        <button class="pin-key" data-val="0">0</button>
+        <button class="pin-key fn" data-val="del">&#9003;</button>
+      </div>
+    </div>`;
+
+  const dots = app.querySelectorAll('.pin-dot');
+
+  function updateDots() {
+    dots.forEach((d, i) => {
+      d.classList.toggle('filled', i < pinValue.length);
+      d.classList.remove('error');
+    });
+  }
+
+  async function tryUnlock() {
+    try {
+      const config = await loadVault(pinValue);
+      state.config = config;
+      state.pin = pinValue;
+      initAuth();
+      render();
+    } catch {
+      // Wrong PIN
+      dots.forEach(d => { d.classList.add('error'); d.classList.remove('filled'); });
+      const dotsContainer = document.getElementById('pinDots');
+      dotsContainer.classList.add('shake');
+      setTimeout(() => {
+        dotsContainer.classList.remove('shake');
+        pinValue = '';
+        updateDots();
+      }, 500);
     }
-  });
+  }
+
+  document.getElementById('pinPad').onclick = (e) => {
+    const btn = e.target.closest('.pin-key');
+    if (!btn) return;
+    const val = btn.dataset.val;
+
+    if (val === 'del') {
+      pinValue = pinValue.slice(0, -1);
+      updateDots();
+    } else if (val === 'reset') {
+      if (confirm('全ての設定を削除してやり直しますか？')) {
+        localStorage.removeItem(VAULT_KEY);
+        render();
+      }
+    } else {
+      if (pinValue.length >= 8) return;
+      pinValue += val;
+      updateDots();
+      if (pinValue.length >= 4) {
+        // Try to unlock after a short delay (allow longer PINs by auto-trying)
+        setTimeout(() => tryUnlock(), 150);
+      }
+    }
+  };
 }
 
 function renderUserArea() {
@@ -591,6 +870,22 @@ function renderUserArea() {
   } else {
     area.innerHTML = '';
   }
+}
+
+function renderZipList() {
+  const zipList = document.getElementById('zipList');
+  if (!zipList) return;
+
+  if (state.zipFiles.length === 0) {
+    zipList.innerHTML = '<div class="status-msg">このフォルダにZIPファイルはありません</div>';
+    return;
+  }
+
+  zipList.innerHTML = state.zipFiles.map(f => renderZipItem(f)).join('');
+  state.zipFiles.forEach(f => {
+    const el = document.getElementById(`zip-${f.id}`);
+    if (el) el.querySelector('.zip-header').onclick = () => toggleZip(f.id);
+  });
 }
 
 function renderZipItem(file) {
@@ -615,19 +910,20 @@ function renderZipItem(file) {
 
 function renderTree(node, allImages, depth) {
   let html = '';
-  const folders = [];
-  const images = [];
-  const files = [];
+  const folders = [], images = [], files = [];
 
   for (const [name, val] of Object.entries(node)) {
-    if (val && val.type === 'image') images.push(val.data);
-    else if (val && val.type === 'file') files.push(name);
+    if (val?.type === 'image') images.push(val.data);
+    else if (val?.type === 'file') files.push(name);
     else if (typeof val === 'object') folders.push({ name, children: val });
   }
 
-  // Folders
+  const collator = new Intl.Collator('ja', { numeric: true });
+  folders.sort((a, b) => collator.compare(a.name, b.name));
+  images.sort((a, b) => collator.compare(a.name, b.name));
+  files.sort((a, b) => collator.compare(a, b));
+
   for (const folder of folders) {
-    const folderId = `tree-${Math.random().toString(36).substr(2, 8)}`;
     const childImages = collectImages(folder.children);
     html += `
       <div class="tree-folder open" onclick="this.classList.toggle('open')"
@@ -641,14 +937,13 @@ function renderTree(node, allImages, depth) {
       </div>`;
   }
 
-  // Images grid
   if (images.length > 0) {
     html += `<div class="image-grid" style="padding-left:${16 + depth * 16}px">`;
     for (const img of images) {
       const idx = allImages.findIndex(i => i.path === img.path);
       html += `
         <div class="image-cell" onclick="openLightbox(
-          state.extractedZips['${getCurrentZipId()}'].images, ${idx}
+          state.extractedZips['${_currentZipId}'].images, ${idx}
         )">
           <img src="${img.url}" loading="lazy" alt="">
           <div class="img-name">${escapeHtml(img.name)}</div>
@@ -657,52 +952,25 @@ function renderTree(node, allImages, depth) {
     html += '</div>';
   }
 
-  // Non-image files
   for (const name of files) {
     html += `<div class="non-image-file" style="padding-left:${16 + depth * 16}px">
       &#128196; ${escapeHtml(name)}
     </div>`;
   }
-
   return html;
 }
 
 let _currentZipId = '';
-function getCurrentZipId() { return _currentZipId; }
 
 function collectImages(node) {
   let imgs = [];
   for (const [, val] of Object.entries(node)) {
-    if (val && val.type === 'image') imgs.push(val.data);
+    if (val?.type === 'image') imgs.push(val.data);
     else if (val && typeof val === 'object' && !val.type) {
       imgs = imgs.concat(collectImages(val));
     }
   }
   return imgs;
-}
-
-async function handleLoad() {
-  const input = document.getElementById('folderInput');
-  const url = input.value.trim();
-  if (!url) return;
-
-  const zipList = document.getElementById('zipList');
-  zipList.innerHTML = '<div class="page-loading"><span class="spinner"></span>フォルダを読み込み中...</div>';
-
-  try {
-    await loadFolder(url);
-    if (state.zipFiles.length === 0) {
-      zipList.innerHTML = '<div class="status-msg">このフォルダにZIPファイルはありません</div>';
-    } else {
-      zipList.innerHTML = state.zipFiles.map(f => renderZipItem(f)).join('');
-      state.zipFiles.forEach(f => {
-        const el = document.getElementById(`zip-${f.id}`);
-        if (el) el.querySelector('.zip-header').onclick = () => toggleZip(f.id);
-      });
-    }
-  } catch (e) {
-    zipList.innerHTML = `<div class="status-msg error">${escapeHtml(e.message)}</div>`;
-  }
 }
 
 async function toggleZip(fileId) {
@@ -723,7 +991,6 @@ async function toggleZip(fileId) {
     _currentZipId = fileId;
     const extracted = state.extractedZips[fileId];
     body.innerHTML = renderTree(extracted.tree, extracted.images, 0);
-    // Update subtitle
     const sizeEl = el.querySelector('.zip-size');
     if (sizeEl) {
       const orig = sizeEl.textContent.split('・')[0];
@@ -734,7 +1001,29 @@ async function toggleZip(fileId) {
   }
 }
 
-// ── Utils ──
+// ─────────────────────────────
+// Initial Setup handler
+// ─────────────────────────────
+async function handleSetup() {
+  const pin = document.getElementById('setupPin').value;
+  const clientId = document.getElementById('setupClientId').value.trim();
+  const folderUrl = document.getElementById('setupFolderUrl').value.trim();
+
+  if (pin.length < 4) { alert('PINは4桁以上にしてください'); return; }
+  if (!clientId) { alert('Client IDは必須です'); return; }
+
+  const config = { clientId, folderUrl };
+  await saveVault(config, pin);
+  state.config = config;
+  state.pin = pin;
+
+  initAuth();
+  render();
+}
+
+// ─────────────────────────────
+// Utils
+// ─────────────────────────────
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -744,25 +1033,22 @@ function formatSize(bytes) {
 
 function escapeHtml(str) {
   const d = document.createElement('div');
-  d.textContent = str;
+  d.textContent = str || '';
   return d.innerHTML;
 }
 
-// ── Init ──
+// ─────────────────────────────
+// Init
+// ─────────────────────────────
 window.addEventListener('load', () => {
-  if (state.clientId) {
-    // Wait for GIS library to load
-    const waitForGis = setInterval(() => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        clearInterval(waitForGis);
-        initAuth();
-        render();
-      }
-    }, 100);
-    setTimeout(() => clearInterval(waitForGis), 5000);
-  } else {
-    render();
-  }
+  const waitForGis = setInterval(() => {
+    if (typeof google !== 'undefined' && google.accounts) {
+      clearInterval(waitForGis);
+      render();
+    }
+  }, 100);
+  // Fallback: render without GIS after timeout
+  setTimeout(() => { clearInterval(waitForGis); render(); }, 3000);
 });
 </script>
 </body>
