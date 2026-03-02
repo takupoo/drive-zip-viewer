@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drive ZIP Viewer</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #f5f5f5; --surface: #fff; --text: #1a1a1a; --text2: #666;
+  --primary: #4285f4; --primary-dark: #3367d6; --border: #e0e0e0;
+  --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100dvh; -webkit-tap-highlight-color: transparent;
+}
+
+/* Header */
+.header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 18px; flex: 1; }
+.header button {
+  background: none; border: none; font-size: 20px; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+}
+.header button:active { background: var(--bg); }
+
+/* Setup / Auth */
+.card {
+  background: var(--surface); margin: 16px; border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.card h2 { font-size: 16px; margin-bottom: 12px; }
+.card p { font-size: 14px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+.input-group { margin-bottom: 12px; }
+.input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.input-group input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 15px; outline: none;
+}
+.input-group input:focus { border-color: var(--primary); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border: none; border-radius: 8px; font-size: 15px;
+  font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s;
+}
+.btn:active { opacity: 0.7; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-google { background: #fff; color: #333; border: 1px solid var(--border); }
+.btn-google img { width: 20px; height: 20px; }
+.btn-sm { width: auto; padding: 8px 16px; font-size: 13px; }
+
+/* Folder input */
+.folder-bar {
+  background: var(--surface); padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.folder-bar input {
+  flex: 1; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; outline: none;
+}
+.folder-bar input:focus { border-color: var(--primary); }
+.folder-bar button {
+  padding: 10px 16px; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+
+/* ZIP list */
+.zip-list { padding: 8px 16px 120px; }
+.zip-item {
+  background: var(--surface); border-radius: var(--radius);
+  margin-bottom: 8px; box-shadow: var(--shadow); overflow: hidden;
+}
+.zip-header {
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; user-select: none;
+}
+.zip-header:active { background: var(--bg); }
+.zip-icon { font-size: 24px; flex-shrink: 0; }
+.zip-info { flex: 1; min-width: 0; }
+.zip-name { font-size: 15px; font-weight: 600; word-break: break-all; }
+.zip-size { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.zip-arrow {
+  font-size: 12px; color: var(--text2); transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.zip-item.open .zip-arrow { transform: rotate(90deg); }
+.zip-body { display: none; border-top: 1px solid var(--border); }
+.zip-item.open .zip-body { display: block; }
+
+/* Loading */
+.zip-loading {
+  padding: 20px; text-align: center; color: var(--text2); font-size: 14px;
+}
+.spinner {
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid var(--border); border-top-color: var(--primary);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* File tree */
+.tree { padding: 8px 0; }
+.tree-folder {
+  cursor: pointer; user-select: none;
+  padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600;
+}
+.tree-folder:active { background: var(--bg); }
+.tree-folder .arrow {
+  font-size: 10px; color: var(--text2); transition: transform 0.2s;
+  width: 16px; text-align: center;
+}
+.tree-folder.open .arrow { transform: rotate(90deg); }
+.tree-children { display: none; }
+.tree-folder.open + .tree-children { display: block; }
+
+/* Image grid */
+.image-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 4px 16px 8px;
+}
+.image-grid.nested { padding-left: 32px; }
+.image-cell {
+  aspect-ratio: 1; overflow: hidden; border-radius: 6px;
+  cursor: pointer; background: var(--bg); position: relative;
+}
+.image-cell img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; transition: opacity 0.3s;
+}
+.image-cell .img-name {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+  color: #fff; font-size: 10px; padding: 12px 4px 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.non-image-file {
+  padding: 6px 16px 6px 40px; font-size: 13px; color: var(--text2);
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+  z-index: 200; display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.lightbox.active { opacity: 1; pointer-events: auto; }
+.lightbox-header {
+  display: flex; align-items: center; padding: 12px 16px;
+  color: #fff; flex-shrink: 0;
+}
+.lightbox-title { flex: 1; font-size: 14px; text-align: center; word-break: break-all; }
+.lightbox-close {
+  background: none; border: none; color: #fff; font-size: 28px;
+  cursor: pointer; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lightbox-body {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow: auto; padding: 8px;
+}
+.lightbox-body img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.lightbox-nav {
+  display: flex; justify-content: center; gap: 24px;
+  padding: 12px; flex-shrink: 0;
+}
+.lightbox-nav button {
+  background: rgba(255,255,255,0.15); border: none; color: #fff;
+  width: 48px; height: 48px; border-radius: 50%; font-size: 22px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.lightbox-nav button:active { background: rgba(255,255,255,0.3); }
+.lightbox-counter {
+  color: rgba(255,255,255,0.6); font-size: 13px;
+  display: flex; align-items: center;
+}
+
+/* Settings modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 300; display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 16px 16px 0 0;
+  padding: 24px 20px 40px; width: 100%; max-width: 500px;
+  max-height: 80dvh; overflow-y: auto;
+}
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal .input-group { margin-bottom: 16px; }
+
+/* Status */
+.status-msg {
+  text-align: center; padding: 40px 20px; color: var(--text2); font-size: 14px;
+}
+.error { color: #d93025; }
+
+/* User info */
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 4px; background: var(--bg);
+  border-radius: 20px; font-size: 13px; cursor: pointer;
+}
+.user-chip img { width: 28px; height: 28px; border-radius: 50%; }
+
+/* Page-level loading */
+.page-loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 20px; color: var(--text2);
+}
+.page-loading .spinner { margin: 0 0 12px 0; width: 28px; height: 28px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ZIP Viewer</h1>
+  <div id="userArea"></div>
+  <button id="settingsBtn" title="設定">&#9881;</button>
+</div>
+
+<div id="app"></div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-header">
+    <div style="width:44px"></div>
+    <div class="lightbox-title" id="lightboxTitle"></div>
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+  </div>
+  <div class="lightbox-body" id="lightboxBody"></div>
+  <div class="lightbox-nav">
+    <button id="lightboxPrev">&#8249;</button>
+    <span class="lightbox-counter" id="lightboxCounter"></span>
+    <button id="lightboxNext">&#8250;</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>設定</h2>
+    <div class="input-group">
+      <label>Google Client ID</label>
+      <input type="text" id="clientIdInput" placeholder="xxxx.apps.googleusercontent.com">
+    </div>
+    <p>Google Cloud Console で OAuth 2.0 クライアントIDを作成し、<br>承認済み JavaScript 生成元にこのサイトのURLを追加してください。</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" id="saveSettings" style="flex:1">保存</button>
+      <button class="btn btn-google" id="cancelSettings" style="flex:1">キャンセル</button>
+    </div>
+    <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn btn-google" id="signOutBtn" style="color:#d93025">サインアウト</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|svg|bmp|avif|ico|heic|heif|tiff?)$/i;
+const ZIP_MIME = 'application/zip';
+const ZIP_EXTS = /\.(zip)$/i;
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+
+let state = {
+  clientId: localStorage.getItem('g_client_id') || '',
+  accessToken: null,
+  user: null,
+  folderId: null,
+  folderUrl: localStorage.getItem('last_folder_url') || '',
+  zipFiles: [],
+  extractedZips: {},  // fileId -> {tree, images[]}
+  tokenClient: null,
+};
+
+// ── Lightbox ──
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function openLightbox(images, index) {
+  lightboxImages = images;
+  lightboxIndex = index;
+  renderLightbox();
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  const img = document.querySelector('#lightboxBody img');
+  if (img) img.src = '';
+}
+function renderLightbox() {
+  const item = lightboxImages[lightboxIndex];
+  document.getElementById('lightboxTitle').textContent = item.name;
+  document.getElementById('lightboxBody').innerHTML = '';
+  const img = document.createElement('img');
+  img.src = item.url;
+  document.getElementById('lightboxBody').appendChild(img);
+  document.getElementById('lightboxCounter').textContent =
+    `${lightboxIndex + 1} / ${lightboxImages.length}`;
+}
+document.getElementById('lightboxClose').onclick = closeLightbox;
+document.getElementById('lightbox').onclick = (e) => {
+  if (e.target === e.currentTarget || e.target === document.getElementById('lightboxBody'))
+    closeLightbox();
+};
+document.getElementById('lightboxPrev').onclick = () => {
+  lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
+  renderLightbox();
+};
+document.getElementById('lightboxNext').onclick = () => {
+  lightboxIndex = (lightboxIndex + 1) % lightboxImages.length;
+  renderLightbox();
+};
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lightbox').classList.contains('active')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') document.getElementById('lightboxPrev').click();
+  if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
+});
+
+// ── Swipe support ──
+let touchStartX = 0;
+document.getElementById('lightbox').addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+document.getElementById('lightbox').addEventListener('touchend', (e) => {
+  const diff = e.changedTouches[0].screenX - touchStartX;
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) document.getElementById('lightboxPrev').click();
+    else document.getElementById('lightboxNext').click();
+  }
+});
+
+// ── Settings ──
+document.getElementById('settingsBtn').onclick = () => {
+  document.getElementById('clientIdInput').value = state.clientId;
+  document.getElementById('settingsModal').classList.add('active');
+};
+document.getElementById('cancelSettings').onclick = () => {
+  document.getElementById('settingsModal').classList.remove('active');
+};
+document.getElementById('settingsModal').onclick = (e) => {
+  if (e.target === e.currentTarget)
+    document.getElementById('settingsModal').classList.remove('active');
+};
+document.getElementById('saveSettings').onclick = () => {
+  const val = document.getElementById('clientIdInput').value.trim();
+  if (val) {
+    state.clientId = val;
+    localStorage.setItem('g_client_id', val);
+    document.getElementById('settingsModal').classList.remove('active');
+    initAuth();
+    render();
+  }
+};
+document.getElementById('signOutBtn').onclick = () => {
+  state.accessToken = null;
+  state.user = null;
+  state.zipFiles = [];
+  state.extractedZips = {};
+  if (state.accessToken) {
+    google.accounts.oauth2.revoke(state.accessToken);
+  }
+  document.getElementById('settingsModal').classList.remove('active');
+  render();
+};
+
+// ── Google Auth ──
+function initAuth() {
+  if (!state.clientId) return;
+  try {
+    state.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: state.clientId,
+      scope: SCOPES,
+      callback: handleTokenResponse,
+    });
+  } catch (e) {
+    console.error('Auth init error:', e);
+  }
+}
+
+function handleTokenResponse(resp) {
+  if (resp.error) {
+    console.error('Token error:', resp);
+    return;
+  }
+  state.accessToken = resp.access_token;
+  fetchUserInfo().then(() => render());
+}
+
+function requestSignIn() {
+  if (!state.tokenClient) {
+    alert('Client IDが設定されていません。設定画面からClient IDを入力してください。');
+    return;
+  }
+  state.tokenClient.requestAccessToken();
+}
+
+async function fetchUserInfo() {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${state.accessToken}` },
+    });
+    state.user = await res.json();
+  } catch (e) {
+    console.error('User info error:', e);
+  }
+}
+
+async function driveApiFetch(url) {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${state.accessToken}` },
+  });
+  if (res.status === 401) {
+    state.accessToken = null;
+    state.user = null;
+    render();
+    throw new Error('認証の有効期限が切れました。再度サインインしてください。');
+  }
+  if (!res.ok) throw new Error(`Drive API error: ${res.status}`);
+  return res;
+}
+
+// ── Drive API ──
+function parseFolderUrl(url) {
+  const m = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+async function loadFolder(url) {
+  const folderId = parseFolderUrl(url);
+  if (!folderId) throw new Error('無効なGoogle ドライブフォルダURLです');
+  state.folderId = folderId;
+  state.folderUrl = url;
+  state.extractedZips = {};
+  localStorage.setItem('last_folder_url', url);
+
+  let allFiles = [];
+  let pageToken = '';
+  do {
+    const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
+    const fields = encodeURIComponent('nextPageToken,files(id,name,mimeType,size)');
+    let apiUrl = `${DRIVE_API}/files?q=${q}&fields=${fields}&pageSize=100&orderBy=name`;
+    if (pageToken) apiUrl += `&pageToken=${pageToken}`;
+    const res = await driveApiFetch(apiUrl);
+    const data = await res.json();
+    allFiles = allFiles.concat(data.files || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+
+  state.zipFiles = allFiles.filter(f =>
+    f.mimeType === ZIP_MIME || ZIP_EXTS.test(f.name)
+  );
+}
+
+async function downloadAndExtractZip(fileId) {
+  const res = await driveApiFetch(`${DRIVE_API}/files/${fileId}?alt=media`);
+  const buf = await res.arrayBuffer();
+  const zip = await JSZip.loadAsync(buf);
+  const tree = {};
+  const images = [];
+
+  const entries = [];
+  zip.forEach((path, entry) => { entries.push({ path, entry }); });
+
+  for (const { path, entry } of entries) {
+    if (entry.dir) continue;
+    const parts = path.split('/');
+    let node = tree;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!node[parts[i]]) node[parts[i]] = {};
+      node = node[parts[i]];
+    }
+    const fileName = parts[parts.length - 1];
+    if (fileName.startsWith('.') || fileName.startsWith('__MACOSX')) continue;
+    if (path.includes('__MACOSX')) continue;
+
+    if (IMAGE_EXTS.test(fileName)) {
+      const blob = await entry.async('blob');
+      const url = URL.createObjectURL(blob);
+      const imgData = { name: fileName, path, url };
+      images.push(imgData);
+      node[fileName] = { type: 'image', data: imgData };
+    } else {
+      node[fileName] = { type: 'file' };
+    }
+  }
+
+  state.extractedZips[fileId] = { tree, images };
+}
+
+// ── Rendering ──
+function render() {
+  const app = document.getElementById('app');
+  renderUserArea();
+
+  // No client ID
+  if (!state.clientId) {
+    app.innerHTML = `
+      <div class="card">
+        <h2>セットアップ</h2>
+        <p>Google Drive APIを使用するためにClient IDが必要です。</p>
+        <ol style="font-size:14px;color:var(--text2);padding-left:20px;margin-bottom:16px;line-height:2">
+          <li><a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> でプロジェクトを作成</li>
+          <li>「APIとサービス」→「ライブラリ」→ Google Drive API を有効化</li>
+          <li>「認証情報」→「OAuth 2.0 クライアントID」を作成（ウェブアプリ）</li>
+          <li>承認済み JavaScript 生成元にこのサイトのURL を追加</li>
+          <li>OAuth 同意画面でテストユーザーに自分を追加</li>
+        </ol>
+        <div class="input-group">
+          <label>Client ID</label>
+          <input type="text" id="setupClientId" placeholder="xxxx.apps.googleusercontent.com">
+        </div>
+        <button class="btn btn-primary" id="setupSave">設定して開始</button>
+      </div>`;
+    document.getElementById('setupSave').onclick = () => {
+      const v = document.getElementById('setupClientId').value.trim();
+      if (v) {
+        state.clientId = v;
+        localStorage.setItem('g_client_id', v);
+        initAuth();
+        render();
+      }
+    };
+    return;
+  }
+
+  // Not signed in
+  if (!state.accessToken) {
+    app.innerHTML = `
+      <div class="card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:16px">&#128193;</div>
+        <h2 style="margin-bottom:8px">Drive ZIP Viewer</h2>
+        <p>Google ドライブのZIPファイルを<br>フォルダ構造で閲覧できます</p>
+        <button class="btn btn-google" id="signInBtn">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+          Googleでサインイン
+        </button>
+      </div>`;
+    document.getElementById('signInBtn').onclick = requestSignIn;
+    return;
+  }
+
+  // Signed in - show folder input + zip list
+  app.innerHTML = `
+    <div class="folder-bar">
+      <input type="text" id="folderInput" placeholder="Google ドライブのフォルダURL"
+             value="${escapeHtml(state.folderUrl)}">
+      <button id="loadBtn">読込</button>
+    </div>
+    <div id="zipList" class="zip-list">
+      ${state.zipFiles.length === 0
+        ? '<div class="status-msg">フォルダURLを入力して「読込」をタップ</div>'
+        : state.zipFiles.map(f => renderZipItem(f)).join('')
+      }
+    </div>`;
+
+  document.getElementById('loadBtn').onclick = handleLoad;
+  document.getElementById('folderInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLoad();
+  });
+
+  // Bind zip item events
+  state.zipFiles.forEach(f => {
+    const el = document.getElementById(`zip-${f.id}`);
+    if (el) {
+      el.querySelector('.zip-header').onclick = () => toggleZip(f.id);
+    }
+  });
+}
+
+function renderUserArea() {
+  const area = document.getElementById('userArea');
+  if (state.user) {
+    area.innerHTML = `
+      <div class="user-chip" title="${escapeHtml(state.user.email || '')}">
+        <img src="${state.user.picture || ''}" alt="" referrerpolicy="no-referrer">
+        <span>${escapeHtml(state.user.given_name || state.user.name || '')}</span>
+      </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+function renderZipItem(file) {
+  const size = file.size ? formatSize(Number(file.size)) : '';
+  const extracted = state.extractedZips[file.id];
+  const openClass = extracted ? 'open' : '';
+  return `
+    <div class="zip-item ${openClass}" id="zip-${file.id}">
+      <div class="zip-header">
+        <span class="zip-icon">&#128230;</span>
+        <div class="zip-info">
+          <div class="zip-name">${escapeHtml(file.name)}</div>
+          <div class="zip-size">${size}${extracted ? ` ・ ${extracted.images.length}枚の画像` : ''}</div>
+        </div>
+        <span class="zip-arrow">&#9654;</span>
+      </div>
+      <div class="zip-body" id="zipBody-${file.id}">
+        ${extracted ? renderTree(extracted.tree, extracted.images, 0) : ''}
+      </div>
+    </div>`;
+}
+
+function renderTree(node, allImages, depth) {
+  let html = '';
+  const folders = [];
+  const images = [];
+  const files = [];
+
+  for (const [name, val] of Object.entries(node)) {
+    if (val && val.type === 'image') images.push(val.data);
+    else if (val && val.type === 'file') files.push(name);
+    else if (typeof val === 'object') folders.push({ name, children: val });
+  }
+
+  // Folders
+  for (const folder of folders) {
+    const folderId = `tree-${Math.random().toString(36).substr(2, 8)}`;
+    const childImages = collectImages(folder.children);
+    html += `
+      <div class="tree-folder open" onclick="this.classList.toggle('open')"
+           style="padding-left:${16 + depth * 16}px">
+        <span class="arrow">&#9654;</span>
+        &#128193; ${escapeHtml(folder.name)}
+        <span style="color:var(--text2);font-weight:400;font-size:12px;margin-left:4px">(${childImages.length})</span>
+      </div>
+      <div class="tree-children" style="display:block">
+        ${renderTree(folder.children, allImages, depth + 1)}
+      </div>`;
+  }
+
+  // Images grid
+  if (images.length > 0) {
+    html += `<div class="image-grid" style="padding-left:${16 + depth * 16}px">`;
+    for (const img of images) {
+      const idx = allImages.findIndex(i => i.path === img.path);
+      html += `
+        <div class="image-cell" onclick="openLightbox(
+          state.extractedZips['${getCurrentZipId()}'].images, ${idx}
+        )">
+          <img src="${img.url}" loading="lazy" alt="">
+          <div class="img-name">${escapeHtml(img.name)}</div>
+        </div>`;
+    }
+    html += '</div>';
+  }
+
+  // Non-image files
+  for (const name of files) {
+    html += `<div class="non-image-file" style="padding-left:${16 + depth * 16}px">
+      &#128196; ${escapeHtml(name)}
+    </div>`;
+  }
+
+  return html;
+}
+
+let _currentZipId = '';
+function getCurrentZipId() { return _currentZipId; }
+
+function collectImages(node) {
+  let imgs = [];
+  for (const [, val] of Object.entries(node)) {
+    if (val && val.type === 'image') imgs.push(val.data);
+    else if (val && typeof val === 'object' && !val.type) {
+      imgs = imgs.concat(collectImages(val));
+    }
+  }
+  return imgs;
+}
+
+async function handleLoad() {
+  const input = document.getElementById('folderInput');
+  const url = input.value.trim();
+  if (!url) return;
+
+  const zipList = document.getElementById('zipList');
+  zipList.innerHTML = '<div class="page-loading"><span class="spinner"></span>フォルダを読み込み中...</div>';
+
+  try {
+    await loadFolder(url);
+    if (state.zipFiles.length === 0) {
+      zipList.innerHTML = '<div class="status-msg">このフォルダにZIPファイルはありません</div>';
+    } else {
+      zipList.innerHTML = state.zipFiles.map(f => renderZipItem(f)).join('');
+      state.zipFiles.forEach(f => {
+        const el = document.getElementById(`zip-${f.id}`);
+        if (el) el.querySelector('.zip-header').onclick = () => toggleZip(f.id);
+      });
+    }
+  } catch (e) {
+    zipList.innerHTML = `<div class="status-msg error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function toggleZip(fileId) {
+  const el = document.getElementById(`zip-${fileId}`);
+  if (!el) return;
+
+  if (state.extractedZips[fileId]) {
+    el.classList.toggle('open');
+    return;
+  }
+
+  el.classList.add('open');
+  const body = document.getElementById(`zipBody-${fileId}`);
+  body.innerHTML = '<div class="zip-loading"><span class="spinner"></span>解凍中...</div>';
+
+  try {
+    await downloadAndExtractZip(fileId);
+    _currentZipId = fileId;
+    const extracted = state.extractedZips[fileId];
+    body.innerHTML = renderTree(extracted.tree, extracted.images, 0);
+    // Update subtitle
+    const sizeEl = el.querySelector('.zip-size');
+    if (sizeEl) {
+      const orig = sizeEl.textContent.split('・')[0];
+      sizeEl.textContent = `${orig}・ ${extracted.images.length}枚の画像`;
+    }
+  } catch (e) {
+    body.innerHTML = `<div class="zip-loading error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ── Utils ──
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ── Init ──
+window.addEventListener('load', () => {
+  if (state.clientId) {
+    // Wait for GIS library to load
+    const waitForGis = setInterval(() => {
+      if (typeof google !== 'undefined' && google.accounts) {
+        clearInterval(waitForGis);
+        initAuth();
+        render();
+      }
+    }, 100);
+    setTimeout(() => clearInterval(waitForGis), 5000);
+  } else {
+    render();
+  }
+});
+</script>
+</body>
+</html>
